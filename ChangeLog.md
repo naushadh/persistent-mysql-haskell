@@ -1,5 +1,9 @@
 # ChangeLog for `persistent-mysql-haskell`
 
+## 0.6.1
+
+- Tighten constraints to ensure we can build properly on vanilla cabal without stack resolver.
+
 ## 0.6.0
 
 - Port [#977](https://github.com/yesodweb/persistent/pull/977) from `persistent-mysql`: Support Stackage Nightly

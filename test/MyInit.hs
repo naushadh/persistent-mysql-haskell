@@ -6,7 +6,6 @@ module MyInit (
   , assertNotEqual
   , assertNotEmpty
   , assertEmpty
-  , isTravis
   , BackendMonad
   , runConn
 
@@ -46,7 +45,7 @@ import Init
     , truncateToMicro, arbText, GenerateKey(..)
     , (@/=), (@==), (==@)
     , assertNotEqual, assertNotEmpty, assertEmpty, asIO
-    , isTravis, RunDb, MonadFail
+    , RunDb, MonadFail
     )
 
 -- re-exports
@@ -68,8 +67,10 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Control.Monad.Trans.Resource (ResourceT, runResourceT)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.Int (Int32, Int64)
 import Data.Text (Text)
+import System.Environment (getEnv, lookupEnv)
 import System.Log.FastLogger (fromLogStr)
 
 import Database.Persist
@@ -77,24 +78,27 @@ import Database.Persist.MySQL
 import Database.Persist.Sql
 import Database.Persist.TH ()
 
-_debugOn :: Bool
-_debugOn = False
-
 persistSettings :: MkPersistSettings
 persistSettings = sqlSettings { mpsGeneric = True }
 
 type BackendMonad = SqlBackend
 
+getEnvBS :: String -> IO BS.ByteString
+getEnvBS k = BSC.pack <$> getEnv k
+
 runConn :: MonadUnliftIO m => SqlPersistT (LoggingT m) t -> m ()
 runConn f = do
-  travis <- liftIO isTravis
-  let debugPrint = not travis && _debugOn
-  let printDebug = if debugPrint then print . fromLogStr else void . return
+  (hostname, database, username, password, logLevel) <- liftIO $ (,,,,)
+    <$> getEnv "MYSQL_HOST"
+    <*> getEnvBS "MYSQL_DATABASE"
+    <*> getEnvBS "MYSQL_USER"
+    <*> getEnvBS "MYSQL_PASSWORD"
+    <*> lookupEnv "TEST_LOG"
+
+  let printDebug = if (logLevel == Just "debug") then print . fromLogStr else void . return
   let ff = rawExecute "SET SESSION sql_mode = ''" [] >> f
   flip runLoggingT (\_ _ _ s -> printDebug s) $ do
-    _ <- if not travis
-      then withMySQLPool (mkMySQLConnectInfo "localhost" "test" "test" "test") 1 $ runSqlPool ff
-      else withMySQLPool (mkMySQLConnectInfo "localhost" "travis" "" "persistent") 1 $ runSqlPool ff
+    _ <- withMySQLPool (mkMySQLConnectInfo hostname username password database) 1 $ runSqlPool ff
     return ()
 
 db :: SqlPersistT (LoggingT (ResourceT IO)) () -> Assertion

@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:5.6
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+    env_file:
+      - .env
+
+  app:
+    image: haskell:${GHC_VERSION:-8}-slim
+    working_dir: /app
+    volumes:
+      - ./.cabal:/root/.cabal
+      - ./Database:/app/Database
+      - ./dist-newstyle:/app/dist-newstyle
+      - ./example:/app/example
+      - ./scripts:/app/scripts
+      - ./test:/app/test
+      - ./ChangeLog.md:/app/ChangeLog.md
+      - ./LICENSE:/app/LICENSE
+      - ./persistent-mysql-haskell.cabal:/app/persistent-mysql-haskell.cabal
+      - ./README.md:/app/README.md
+      - ./Setup.lhs:/app/Setup.lhs
+    entrypoint: ["bash", "-c"]
+    environment:
+      - MYSQL_HOST=mysql
+    env_file:
+      - .env
