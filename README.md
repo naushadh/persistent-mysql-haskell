@@ -1,7 +1,9 @@
 # persistent-mysql-haskell
 
 [![hackage version](https://img.shields.io/hackage/v/persistent-mysql-haskell.svg)](https://hackage.haskell.org/package/persistent-mysql-haskell)
-[![Build Status](https://travis-ci.org/naushadh/persistent.svg?branch=persistent-mysql-haskell)](https://travis-ci.org/naushadh/persistent)
+[![Build Status](https://github.com/naushadh/persistent-mysql-haskell/actions/workflows/build.yml/badge.svg)](https://github.com/naushadh/persistent-mysql-haskell/actions)
+
+## Overview
 
 A pure haskell backend for [persistent](https://github.com/yesodweb/persistent) using the MySQL database server.
 Internally it uses the [mysql-haskell](https://github.com/winterland1989/mysql-haskell) driver in order to access the database.
@@ -26,11 +28,11 @@ Reasons to use a pure haskell driver:
 
 Personal experience on replacing `mysql-simple` with `mysql-haskell` in a project:
 
-- Performance gains consistent with benchmark.
+- Performance gains consistent with [benchmark](https://github.com/winterland1989/mysql-haskell#is-it-fast).
 
 - Smoother deployment to [AWS](https://en.wikipedia.org/wiki/Amazon_Machine_Image), since `mysql` appears to have a hard dependency on the oracle version of `libmysqlclient` that does not work with the open source variant that is available by default on Amazon Linux (and possibly on other Linux distros).
 
-### Potential issues moving from persistent-mysql to persistent-mysql-haskell
+### Switch from persistent-mysql to persistent-mysql-haskell
 
 `ConnectInfo` and `defaultConnectInfo` are not the same between `mysql` and `mysql-haskell`, therefore this package is not a 100% drop in replacement for persistent-mysql from the connection configuration perspective.
 
@@ -73,7 +75,6 @@ that ships with `mysql-haskell`.
     -         customCaParams = defaultSSLInfo { sslCAPath = "foobar.pem" }
     +         customCaParams = makeClientParams $ CustomCAStore "foobar.pem"
     ```
-
 
 Aside from connection configuration, persistent-mysql-haskell is functionally on par with persistent-mysql (as of writing this). This can be seen by [comparing persistent-test between this fork and upstream](https://github.com/yesodweb/persistent/compare/master...naushadh:persistent-mysql-haskell#diff-028f5df7b2b9c5c8b0fa670fc8c69bff).
 
@@ -157,11 +158,13 @@ by modifying `Foundation.hs` (or editing the `my.cnf` server configuration):
 
 #### Does persistent-mysql-haskell ship with tests?
 
-- It does! :) `persistent-test` is fully re-used with an additional flag to specifically test persistent-mysql-haskell.
+It does! :) `persistent-test` is fully re-used with an additional flag to specifically test persistent-mysql-haskell.
 
-    - [CI/Travis](https://travis-ci.org/naushadh/persistent), see [.travis.yml](../.travis.yml).
+- See [Github Actions](https://github.com/naushadh/persistent-mysql-haskell/actions)
 
-    - Local,
+- To build and test locally,
+
     ```bash
-    stack test persistent-test --flag persistent-test:mysql_haskell --exec persistent-test
+    docker-compose up -d
+    ./scripts/shell.sh ./scripts/build.sh
     ```
